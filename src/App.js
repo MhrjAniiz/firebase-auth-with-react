@@ -1,26 +1,108 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
 
-function App() {
+import {useState,useEffect} from 'react'
+import Home from './Home'
+import 'firebase/auth';
+import React from 'react'
+import fire from './Firebase';
+import Login from './Login'
+
+
+export default function App() {
+  const [email,setEmail] = useState('');
+  const [password,setPassword] = useState('');
+  const [user,setUser] = useState('');
+  const [emailError,setEmailError]=useState('');
+  const [passwordError,setpasswordError]=useState('');
+  const [hasAccount,sethasAccount]=useState(false);
+
+
+  const clearInput = () =>{
+    setEmail('');
+    setPassword('');
+  }
+
+  const clearErrors = ()=>{
+    setEmailError('');
+    setpasswordError('');
+  }
+
+
+  // login function
+  const handleLogin= ()=>{
+    clearErrors();
+    fire
+    .auth().signInWithEmailAndPassword(email,password)
+    .catch(err=>{
+      switch(err.code){
+        case "auth/invalid-email":
+          case "auth/user-disabled":
+            case "auth/user-not-found":
+              setEmailError(err.message);
+              break;
+              case "auth/wrong-password":
+                setpasswordError(err.message);
+                break;
+      }
+    });
+  };
+
+  //signup function
+  const handleSignUp = ()=>{
+    clearErrors();
+    fire.auth()
+    .createUserWithEmailAndPassword(email,password)
+    .catch(err=>{
+      switch(err.code){
+          case "auth/email-already-in-use":
+            case "auth/invalid-email":
+              setEmailError(err.message);
+              break;
+              case "auth/weak-password":
+                setpasswordError(err.message);
+                break;
+      }
+    });
+  };
+  //logout
+  const handleSignOut = () =>{
+    fire.auth().signOut();
+  }
+  //checking whether sign in or not
+  const authListener = ()=>{
+    fire.auth().onAuthStateChanged((user)=>{
+      if(user){
+        clearInput();
+        setUser(user);
+
+      }else{
+        setUser("");
+      }
+    })
+  }
+useEffect(()=>{
+  authListener();
+},[])
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      {user ? (<Home handleSignOut={handleSignOut}/>) : (  <Login
+      email={email}
+      setEmail={setEmail} 
+      password={password}
+      setPassword={setPassword}
+      handleLogin = {handleLogin}
+      handleSignUp={handleSignUp}
+      hasAccount={hasAccount}
+      sethasAccount={sethasAccount}
+      emailError={emailError}
+      passwordError={passwordError}
+      
+      />)}
+    
+
     </div>
-  );
+  )
 }
 
-export default App;
+
+
